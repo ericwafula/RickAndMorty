@@ -1,32 +1,15 @@
 package com.ericwafula.rickandmorty.datasources.remote.di
 
-import io.ktor.client.HttpClient
+import com.ericwafula.rickandmorty.datasources.remote.helpers.createHttpClient
 import io.ktor.client.engine.okhttp.OkHttp
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.client.plugins.logging.LogLevel
-import io.ktor.client.plugins.logging.Logging
-import io.ktor.serialization.kotlinx.json.json
-import kotlinx.serialization.json.Json
 import org.koin.dsl.module
 
 /**
- * Provides the Ktor [HttpClient] for the remote data sources — and nothing else.
+ * Provides the Ktor [io.ktor.client.HttpClient] for the remote data sources — and
+ * nothing else. Builds it from the production OkHttp engine via the shared
+ * [createHttpClient] factory; tests reuse that same factory with a MockEngine.
  * Kept internal so consumers depend on [remoteDatasourceModule] rather than this directly.
  */
 internal val clientModule = module {
-    single {
-        HttpClient(OkHttp) {
-            expectSuccess = true
-            install(ContentNegotiation) {
-                json(
-                    Json {
-                        ignoreUnknownKeys = true
-                    }
-                )
-            }
-            install(Logging) {
-                level = LogLevel.ALL
-            }
-        }
-    }
+    single { createHttpClient(OkHttp.create()) }
 }
