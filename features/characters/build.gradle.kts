@@ -10,4 +10,6 @@ dependencies {
     implementation(project(":data:core"))
     implementation(project(":data:domain"))
     implementation(project(":ui"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }

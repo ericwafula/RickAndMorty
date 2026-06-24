@@ -8,4 +8,6 @@ android {
 
 dependencies {
     implementation(project(":data:core"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }
