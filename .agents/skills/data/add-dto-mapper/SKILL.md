@@ -65,7 +65,7 @@ fields here rather than leaking nullability into the model.
 In the repository, feed the mapper into `toDataResult` (see `add-repository`):
 
 ```kotlin
-remoteDataSource.getCharacter(id).toDataResult { it.toData() }
+remoteDatasource.getCharacter(id).toDataResult { it.toData() }
 ```
 
 ## Verify

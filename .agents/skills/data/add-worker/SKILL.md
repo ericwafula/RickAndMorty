@@ -42,11 +42,11 @@ params are always `Context` + `WorkerParameters`; everything after is injected:
 internal class CharacterSyncWorker(
     context: Context,
     params: WorkerParameters,
-    private val remoteDataSource: CharacterRemoteDataSource,
+    private val remoteDatasource: CharacterRemoteDatasource,
 ) : CoroutineWorker(context, params) {
 
     override suspend fun doWork(): Result =
-        when (remoteDataSource.getCharacters(page = 1)) {
+        when (remoteDatasource.getCharacters(page = 1)) {
             is RemoteResult.Success -> Result.success()
             is RemoteResult.Error -> Result.retry()
         }

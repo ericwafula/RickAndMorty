@@ -1,83 +1,97 @@
 ---
 name: add-remote-datasource
 description: >-
-  Add one Ktor-backed remote data source to :datasources:remote — its DTOs, an
-  interface, an impl using safeApiCall, and its DI binding. Use when asked to
-  "add a remote data source", "add an API call", "fetch <X> from the network",
-  or to expose a new remote endpoint to the data layer.
+  Add a remote data source to :datasources:remote as composable single-unit data
+  sources ([Verb][Name]RemoteDatasource) encapsulated by a parent contract. Use when
+  asked to "add a remote data source", "add an API call", "fetch <X> from the
+  network", or to expose a new remote endpoint to the data layer.
 ---
 
 # Add a remote data source
 
-A remote data source owns one cohesive set of network calls. It returns
-**DTOs wrapped in `RemoteResult`** and never leaks Ktor types to callers. Scope
-this skill to a single data source — one interface + impl + binding.
+A feature's remote data source is **not one class with many methods** — it is a
+set of **single-unit data sources** (one network operation each), encapsulated by
+a **parent data source contract**. Each unit is a tiny functional interface, so
+it owns exactly one responsibility and tests in isolation.
 
-## Conventions
+## Why this shape
 
-- Lives in `:datasources:remote`, package
-  `com.ericwafula.rickandmorty.datasources.remote.<feature>`.
-- **DTOs** are `@Serializable` (the `kotlin-serialization` plugin is already
-  applied to this module) and live in the `...remote.dto` package. The data
-  layer maps them to its own models — see the `add-dto-mapper` skill.
-- The impl depends only on the injected `HttpClient` and the IO dispatcher
-  resolved with the `IODispatcher` qualifier — never constructs its own.
-- Every call goes through `safeApiCall(ioDispatcher) { ... }` (see
-  `helpers/SafeApiCall.kt`) and returns `RemoteResult<Dto>`.
-- Bindings go in an **internal** Koin module included by
-  `remoteDatasourceModule` (alongside `clientModule`, `dispatcherModule`).
+- **Single responsibility**: one type = one network operation. No god-object
+  data source that grows a method per endpoint.
+- **Testability**: each unit is a `fun interface`, so a fake is a one-line lambda
+  — `GetCharacterRemoteDatasource { id -> RemoteResult.Success(dto) }`. The parent is
+  just a holder, trivially built from those fakes.
+
+## Naming & layout
+
+- **Single unit** — `[Verb][Name]RemoteDatasource` (e.g. `GetCharacterRemoteDatasource`,
+  `LoginRemoteDatasource`): a `fun interface` contract + an `internal` impl, **in the
+  same file**.
+- **Parent** — `[Feature]RemoteDatasource` (e.g. `CharacterRemoteDatasource`): an
+  `interface` exposing each child as a `val`, + an `internal` impl that overrides
+  those children as constructor parameters, **in the same file**.
+- Lives in `:datasources:remote`, package `...remote.<feature>`. DTOs are
+  `@Serializable` in `...remote.dto` (see `add-dto-mapper`).
+- **Never hand-write a URL.** Endpoints come from the internal `Routes` sealed
+  class (`...remote.helpers`): add a route (`data object` for no-arg,
+  `data class` for args) and call `Routes.X.route` (base URL + path).
 
 ## Steps
 
-### 1. DTOs
+### 1. Single-unit data source (contract + impl, one file)
 
-`...remote.dto/<Name>Dto.kt`:
-
-```kotlin
-@Serializable
-data class CharacterDto(
-    val id: Int,
-    val name: String,
-    // @SerialName("...") for fields whose JSON key differs
-)
-```
-
-### 2. Interface
-
-`<feature>/<Name>RemoteDataSource.kt`:
+`...remote.<feature>/GetCharacterRemoteDatasource.kt`:
 
 ```kotlin
-interface CharacterRemoteDataSource {
-    suspend fun getCharacter(id: Int): RemoteResult<CharacterDto>
+fun interface GetCharacterRemoteDatasource {
+    suspend operator fun invoke(id: Int): RemoteResult<CharacterDto>
 }
-```
 
-### 3. Impl using safeApiCall
-
-```kotlin
-internal class CharacterRemoteDataSourceImpl(
+internal class GetCharacterRemoteDatasourceImpl(
     private val httpClient: HttpClient,
     private val ioDispatcher: CoroutineDispatcher,
-) : CharacterRemoteDataSource {
-    override suspend fun getCharacter(id: Int) = safeApiCall(ioDispatcher) {
-        httpClient.get("https://rickandmortyapi.com/api/character/$id").body()
+) : GetCharacterRemoteDatasource {
+    override suspend fun invoke(id: Int) = safeApiCall(ioDispatcher) {
+        httpClient.get(Routes.Character(id).route).body()
     }
 }
 ```
 
-### 4. Bind it (internal module included by the parent)
+One file per operation; repeat for `GetCharactersRemoteDatasource`, etc.
 
-Add to an internal `sourceModule` (create it if absent) and include that module
-in `remoteDatasourceModule`:
+### 2. Parent data source (contract + impl, one file)
+
+`...remote.<feature>/CharacterRemoteDatasource.kt`. The impl just holds the
+children — override each as a constructor parameter:
+
+```kotlin
+interface CharacterRemoteDatasource {
+    val getCharacter: GetCharacterRemoteDatasource
+    val getCharacters: GetCharactersRemoteDatasource
+}
+
+internal class CharacterRemoteDatasourceImpl(
+    override val getCharacter: GetCharacterRemoteDatasource,
+    override val getCharacters: GetCharactersRemoteDatasource,
+) : CharacterRemoteDatasource
+```
+
+Consumers depend on the parent and call a unit straight through:
+`characterRemoteDatasource.getCharacter(id)` — the `val` is invoked via its
+`operator fun invoke`.
+
+### 3. Bind it (internal module included by remoteDatasourceModule)
+
+Each unit's impl needs `HttpClient` + `get(IODispatcher)`; the parent autowires
+its children:
 
 ```kotlin
 internal val sourceModule = module {
-    single<CharacterRemoteDataSource> {
-        CharacterRemoteDataSourceImpl(get(), get(IODispatcher))
-    }
+    single<GetCharacterRemoteDatasource> { GetCharacterRemoteDatasourceImpl(get(), get(IODispatcher)) }
+    single<GetCharactersRemoteDatasource> { GetCharactersRemoteDatasourceImpl(get(), get(IODispatcher)) }
+    singleOf(::CharacterRemoteDatasourceImpl) { bind<CharacterRemoteDatasource>() }
 }
-// in RemoteDatasourceModule.kt:
-// includes(clientModule, dispatcherModule, sourceModule)
+// in RemoteDatasourceModule.kt: includes(clientModule, dispatcherModule, sourceModule)
 ```
 
 ## Verify
@@ -91,10 +105,13 @@ Java.)
 
 ## Checklist
 
-- [ ] DTOs are `@Serializable`, in the `...remote.dto` package.
-- [ ] Public interface returns `RemoteResult<Dto>`; impl is `internal`.
-- [ ] Impl uses injected `HttpClient` + `get(IODispatcher)`, calls via
-      `safeApiCall`.
-- [ ] Bound in an internal module included by `remoteDatasourceModule`.
+- [ ] Each operation is a `[Verb][Name]RemoteDatasource` `fun interface` + `internal`
+      impl, in one file.
+- [ ] Each impl uses injected `HttpClient` + `get(IODispatcher)` via
+      `safeApiCall`, returns `RemoteResult<Dto>`.
+- [ ] Parent `[Feature]RemoteDatasource` interface exposes children as `val`s;
+      its `internal` impl overrides them as constructor params (same file).
+- [ ] Units + parent bound in an internal module included by
+      `remoteDatasourceModule`.
+- [ ] Consumed by a repository via the parent (see `add-repository`).
 - [ ] `:datasources:remote:compileDebugSources` succeeds.
-- [ ] Consumed by a repository — see the `add-repository` skill.

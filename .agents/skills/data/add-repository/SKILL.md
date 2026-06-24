@@ -58,10 +58,10 @@ interface CharacterRepository {
 
 ```kotlin
 internal class CharacterRepositoryImpl(
-    private val remoteDataSource: CharacterRemoteDataSource,
+    private val remoteDatasource: CharacterRemoteDatasource,
 ) : CharacterRepository {
     override suspend fun getCharacter(id: Int): DataResult<Character> =
-        remoteDataSource.getCharacter(id).toDataResult { it.toData() }
+        remoteDatasource.getCharacter(id).toDataResult { it.toData() }
 }
 ```
 

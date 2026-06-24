@@ -46,12 +46,12 @@ androidx-paging-common = { group = "androidx.paging", name = "paging-common", ve
 
 ```kotlin
 internal class CharacterPagingSource(
-    private val remoteDataSource: CharacterRemoteDataSource,
+    private val remoteDatasource: CharacterRemoteDatasource,
 ) : PagingSource<Int, Character>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, Character> {
         val page = params.key ?: 1
-        return when (val result = remoteDataSource.getCharacters(page)) {
+        return when (val result = remoteDatasource.getCharacters(page)) {
             is RemoteResult.Success -> LoadResult.Page(
                 data = result.data.results.map { it.toData() },
                 prevKey = if (page == 1) null else page - 1,
@@ -83,7 +83,7 @@ The paginating repository builds a `Pager`; `pagingSourceFactory` must return a
 override fun getCharacters(): Flow<PagingData<Character>> =
     Pager(
         config = PagingConfig(pageSize = 20),
-        pagingSourceFactory = { CharacterPagingSource(remoteDataSource) },
+        pagingSourceFactory = { CharacterPagingSource(remoteDatasource) },
     ).flow
 ```
 
