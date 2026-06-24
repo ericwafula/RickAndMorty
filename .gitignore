@@ -1,0 +1,30 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+
+# The global gitignore (~/.gitignore_global) hides .agents and .claude. This
+# repo's skills live in .agents, so re-include it here (a repo .gitignore
+# outranks the global one). .claude/skills stays generated — see sync-skills.sh.
+!.agents/
+/.claude/skills/
+
+# Project exclude paths
+/build-logic/conventions/build/
+/build-logic/conventions/build/classes/kotlin/main/
+/data/core/build/
+/data/domain/build/
+/datasources/remote/build/
+/features/characters/build/
+/ui/build/
