@@ -8,4 +8,6 @@ android {
 
 dependencies {
     implementation(project(":datasources:remote"))
+
+    testImplementation(libs.kotlinx.coroutines.test)
 }
