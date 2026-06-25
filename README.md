@@ -4,6 +4,8 @@ A modular Android app where dependencies flow **one way**, from the screen down 
 the network. Each module's README is a slide; read them in order to follow a tap
 as it travels to the network and a result as it travels back.
 
+The network is the [Rick and Morty API](https://rickandmortyapi.com/documentation).
+
 ## The flow
 
 ```mermaid
