@@ -33,6 +33,108 @@ flowchart TD
 - **Presentation** has two parts — a **container** (the ViewModel) and a
   **presenter** (the Composable).
 
+## How it looks
+
+Two screens.
+
+```text
+   Character list                    Character details
+ ┌───────────────────┐             ┌───────────────────┐
+ │ Characters    [Q]  │            │ ‹ Rick Sanchez    │
+ ├───────────────────┤             ├───────────────────┤
+ │ (◐) Rick Sanchez  │             │        (◐)        │
+ │     • Alive·Human │             │    Rick Sanchez   │
+ │     Citadel…      │             │     [ • Alive ]   │
+ │ (◐) Morty Smith   │             │ Species    Human  │
+ │     • Alive·Human │             │ Gender     Male   │
+ │     Earth…        │             │ Origin     Earth  │
+ │ (◐) Birdperson    │             │ Location   Cita…  │
+ │     • Dead·Bird   │             │ Episodes   51     │
+ └───────────────────┘             └───────────────────┘
+   PagingData<Character>            ViewState<Character>
+```
+
+### Character list — `GET /character` (paginated)
+
+A scrollable, **infinitely paged** list — `info.next` drives the next page. Each row
+is a card built from the fields of one `results[]` entry:
+
+| Shows | From | Notes |
+|---|---|---|
+| portrait | `image` | a Coil `AsyncImage`, circular |
+| name | `name` | |
+| status | `status` | a colored dot — green `Alive` · red `Dead` · gray `unknown` |
+| species | `species` | on the status line |
+| location | `location.name` | the sub-line |
+
+A search field filters by `?name=`. Tapping a row opens the details screen.
+**State:** `Flow<PagingData<Character>>` (Paging 3).
+
+### Character details — `GET /character/{id}` (one-shot)
+
+A hero portrait (`image`), the `name`, a `status` badge, then an info panel:
+`species` · `gender` · `origin.name` · `location.name` · episode count (`episode.size`).
+It's a single read by `id`, so no use case — the screen goes straight to the
+repository. **State:** `ViewState<Character>` (Loading / Success / Error).
+
+## The API
+
+Two calls back the two screens. Arrays are trimmed here for brevity.
+
+`GET /character` — a paged envelope: `info` (the cursor) + `results` (20 per page).
+
+```json
+{
+  "info": {
+    "count": 826,
+    "pages": 42,
+    "next": "https://rickandmortyapi.com/api/character/?page=2",
+    "prev": null
+  },
+  "results": [
+    {
+      "id": 1,
+      "name": "Rick Sanchez",
+      "status": "Alive",
+      "species": "Human",
+      "type": "",
+      "gender": "Male",
+      "origin": { "name": "Earth", "url": "https://rickandmortyapi.com/api/location/1" },
+      "location": { "name": "Earth", "url": "https://rickandmortyapi.com/api/location/20" },
+      "image": "https://rickandmortyapi.com/api/character/avatar/1.jpeg",
+      "episode": ["https://rickandmortyapi.com/api/episode/1"],
+      "url": "https://rickandmortyapi.com/api/character/1",
+      "created": "2017-11-04T18:48:46.250Z"
+    }
+  ]
+}
+```
+
+`GET /character/2` — a single character (the details screen):
+
+```json
+{
+  "id": 2,
+  "name": "Morty Smith",
+  "status": "Alive",
+  "species": "Human",
+  "type": "",
+  "gender": "Male",
+  "origin": { "name": "Earth", "url": "https://rickandmortyapi.com/api/location/1" },
+  "location": { "name": "Earth", "url": "https://rickandmortyapi.com/api/location/20" },
+  "image": "https://rickandmortyapi.com/api/character/avatar/2.jpeg",
+  "episode": [
+    "https://rickandmortyapi.com/api/episode/1",
+    "https://rickandmortyapi.com/api/episode/2"
+  ],
+  "url": "https://rickandmortyapi.com/api/character/2",
+  "created": "2017-11-04T18:50:21.651Z"
+}
+```
+
+The `results[]` entry and the single character share the **same** shape — one
+`CharacterDto`; the list just wraps a page of them in `info` + `results`.
+
 ## The slides
 
 | Module | Slide | Role |
