@@ -1,30 +1,24 @@
 ---
 name: add-viewmodel
 description: >-
-  Add a screen + ViewModel to a feature module using the Action / State / Event
-  triad and the Route → Screen → Content structure. Use when asked to "add a
-  screen", "add a viewmodel", "wire up a feature's UI", or to connect a feature
-  to the domain/data layer.
+  Add a ViewModel to a feature module using the Action / State / Event triad,
+  depending on use case / repository interfaces. Use when asked to "add a
+  viewmodel" or to wire a screen's state, actions, and events. The screen's
+  composables are a separate skill (add-screen).
 ---
 
-# Add a screen + ViewModel
+# Add a ViewModel
 
-A feature's UI lives in **its feature module** (`:features:<feature>`, compose
-library plugin) — not the app. The app only registers the feature's Koin module
-and wires its `Route` into navigation.
+A feature's ViewModel lives in **its feature module** (`:features:<feature>`) —
+not the app. It's registered in the feature's Koin module and rendered by a
+screen (see `add-screen`).
 
-## Visibility — only the Route is public
+## Visibility
 
-For every feature, exactly one composable is public; everything else is internal.
-
-- **`<Feature>Route`** — `public`. The navigation entry point. Resolves the
-  ViewModel via `koinViewModel()`, collects state, observes events (bridging them
-  to navigation callbacks), and delegates to the Screen. The **only** public
-  composable in the feature.
-- **`<Feature>Screen`** — `internal`. Stateless: takes `state` + `onAction`,
-  owns layout/scaffolding (top bar, snackbar host).
-- **`<Feature>Content`** — `internal`. Pure rendering of the state.
-- The **ViewModel** and its **State / Action / Event** are `internal` too.
+The ViewModel and its State / Action / Event types are all `internal`. The
+`Screen` composable registers the VM via `koinViewModel()` within the module, so
+nothing outside ever names it. The screen composables (Route → Screen → Content)
+are their own concern — see `add-screen`.
 
 ## The Action / State / Event triad
 
@@ -119,47 +113,12 @@ internal val viewModelModule = module {
 The public `<feature>Module` already `includes(viewModelModule)`, and the app
 already registers `<feature>Module` — no app change needed.
 
-### 4. Route (public) → Screen (internal) → Content (internal)
+### 4. Render it with a screen
 
-```kotlin
-@Composable
-fun CharactersRoute(
-    onCharacterClick: (Int) -> Unit,            // nav callbacks hoisted to the nav graph
-    viewModel: CharactersViewModel = koinViewModel(),
-) {
-    val state by viewModel.state.collectAsStateWithLifecycle()
-
-    ObserveAsEvents(viewModel.events) { event ->
-        when (event) {
-            is CharactersEvent.NavigateToDetail -> onCharacterClick(event.id)
-            is CharactersEvent.ShowMessage -> { /* snackbar */ }
-        }
-    }
-
-    CharactersScreen(state = state, onAction = viewModel::onAction)
-}
-
-@Composable
-internal fun CharactersScreen(
-    state: CharactersState,
-    onAction: (CharactersAction) -> Unit,
-) {
-    // scaffolding (top bar, snackbar host); delegates to Content
-    CharactersContent(state = state, onAction = onAction)
-}
-
-@Composable
-internal fun CharactersContent(
-    state: CharactersState,
-    onAction: (CharactersAction) -> Unit,
-) {
-    // pure rendering of state.characters (a ViewListState), forwarding onAction
-}
-```
-
-`CharactersRoute` takes **navigation callbacks** (lambdas), so the feature never
-depends on the nav graph/library — the app's `NavHost` calls
-`CharactersRoute(onCharacterClick = { navController.navigate(...) })`.
+The composables that register this ViewModel and render its state — the public
+`Route`, the `internal` `Screen` (which calls `koinViewModel()`, collects
+`state`, and runs `ObserveAsEvents(viewModel.events)`), and the `private`
+`Content` — are their own skill: see `add-screen`.
 
 ## Verify
 
@@ -172,12 +131,10 @@ Java.)
 
 ## Checklist
 
-- [ ] Only `<Feature>Route` is `public`; `Screen`, `Content`, the ViewModel, and
-      State/Action/Event are all `internal`.
-- [ ] `Route` resolves the VM (`koinViewModel()`), collects state, bridges events
-      to nav callbacks; `Screen`/`Content` are stateless (`state` + `onAction`).
+- [ ] The ViewModel and its State / Action / Event are all `internal`.
 - [ ] State is one immutable `data class` over `StateFlow`; Action via
       `onAction`; Event via `Channel.receiveAsFlow()` (never in State).
 - [ ] Depends on use case / repository **interfaces**, never impls.
 - [ ] VM bound with `viewModelOf(::VM)` in the feature's `viewModelModule`.
+- [ ] Rendered by a screen — see `add-screen`.
 - [ ] `:features:<feature>:assemble` succeeds.

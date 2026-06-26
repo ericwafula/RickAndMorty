@@ -29,8 +29,9 @@ across screens. Scope this skill to one component.
 
 - Package `com.ericwafula.rickandmorty.ui.components` (group into subpackages as
   it grows).
-- **Stateless** — hoist state: take values in, emit events via lambdas. No
-  ViewModels, no domain/data types.
+- **Stateless and dumb** — a component holds **no** state. State lives in the
+  screen; it's passed down as plain values and changes come back up as event
+  lambdas. No ViewModel, no `ViewState`, no domain/data types inside a component.
 - **Theme tokens only** — colors, type and shapes come from `MaterialTheme`
   (`colorScheme`, `typography`, `shapes`), never hardcoded. The theme is
   `RickAndMortyTheme` (`...ui.theme`).
