@@ -4,6 +4,7 @@
 # .agents/ stays the source of truth:
 #   .agents/skills/<area>/<skill>/  ->  .claude/skills/<skill>
 #   .agents/agents/<name>.md        ->  .claude/agents/<name>.md
+#   .agents/commands/<name>.md      ->  .claude/commands/<name>.md
 #
 # Each skill is a directory containing a SKILL.md, laid out as:
 #   .agents/skills/<module>/<skill-name>/SKILL.md
@@ -58,20 +59,21 @@ done
 
 echo "Synced $linked skill(s) into $dest_root"
 
-# Agents: .agents/agents/<name>.md -> .claude/agents/<name>.md
-agents_src="$repo_root/.agents/agents"
-agents_dest="$repo_root/.claude/agents"
-if [[ -d "$agents_src" ]]; then
-    mkdir -p "$agents_dest"
-    for entry in "$agents_dest"/*; do
+# Flat .md collections: agents and commands -> .claude/<kind>/<name>.md
+for kind in agents commands; do
+    flat_src="$repo_root/.agents/$kind"
+    flat_dest="$repo_root/.claude/$kind"
+    [[ -d "$flat_src" ]] || continue
+    mkdir -p "$flat_dest"
+    for entry in "$flat_dest"/*; do
         [[ -L "$entry" ]] && rm "$entry"
     done
-    agents_linked=0
-    for agent_md in "$agents_src"/*.md; do
-        name="$(basename "$agent_md")"
-        ln -s "../../.agents/agents/$name" "$agents_dest/$name"
-        echo "linked agent: ${name%.md}"
-        agents_linked=$((agents_linked + 1))
+    flat_linked=0
+    for md in "$flat_src"/*.md; do
+        name="$(basename "$md")"
+        ln -s "../../.agents/$kind/$name" "$flat_dest/$name"
+        echo "linked $kind: ${name%.md}"
+        flat_linked=$((flat_linked + 1))
     done
-    echo "Synced $agents_linked agent(s) into $agents_dest"
-fi
+    echo "Synced $flat_linked $kind into $flat_dest"
+done

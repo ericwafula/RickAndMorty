@@ -20,6 +20,7 @@ local.properties
 !.agents/
 /.claude/skills/
 /.claude/agents/
+/.claude/commands/
 
 # Project exclude paths
 /build-logic/conventions/build/
