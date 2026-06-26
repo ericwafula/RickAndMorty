@@ -151,3 +151,35 @@ The `results[]` entry and the single character share the **same** shape — one
 Every dependency points **inward**. A layer talks to the **public contract** of the
 one beneath it and never sees an `internal` impl. That's what lets each piece be
 swapped, faked, and tested on its own.
+
+## Agents & skills
+
+This repo carries its own conventions as **skills** and two **agents** under
+`.agents/`. They're the committed source of truth; a script regenerates them into
+`.claude/` (which is git-ignored), so run it once after cloning:
+
+```bash
+./.agents/sync-skills.sh
+```
+
+- **Skills** — one per layer/operation (`add-remote-datasource`, `add-repository`,
+  `add-screen`, `add-destination`, …, each with a matching `*-test`). Each encodes
+  this project's exact convention for that piece — naming, package, visibility,
+  DI, and a verify step.
+- **`builder`** — an agent that *builds* by applying the skills. Hand it a slice; it
+  picks the skill, follows it verbatim, writes the code, and verifies with Gradle.
+- **`slavie`** — a read-only agent that *teaches* the architecture. Ask it why
+  something is shaped the way it is; it answers from these skills, the READMEs, and
+  the code, and never changes anything.
+
+In a Claude Code session in this repo:
+
+| Do this | To |
+|---|---|
+| `/slavie why does domain depend on data?` | ask the teaching agent |
+| "use `builder` to add the characters remote data source" | delegate a build |
+| `/add-repository` (any `/add-…`) | run a skill yourself |
+
+Building the characters slice end to end follows the layers in order:
+`add-remote-datasource` → `add-dto-mapper` → `add-repository` →
+`add-paging-source` → `add-viewmodel` → `add-screen` → `add-destination`.
