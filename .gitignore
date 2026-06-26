@@ -19,6 +19,7 @@ local.properties
 # outranks the global one). .claude/skills stays generated — see sync-skills.sh.
 !.agents/
 /.claude/skills/
+/.claude/agents/
 
 # Project exclude paths
 /build-logic/conventions/build/
