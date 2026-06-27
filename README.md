@@ -6,6 +6,14 @@ as it travels to the network and a result as it travels back.
 
 The network is the [Rick and Morty API](https://rickandmortyapi.com/documentation).
 
+<p align="center">
+  <a href="https://github.com/ericwafula/RickAndMorty">
+    <img src="docs/repo-qr.png" alt="QR code — scan to open this repository" width="180" />
+  </a>
+  <br />
+  <sub>Scan to open this repo</sub>
+</p>
+
 ## The flow
 
 ```mermaid
