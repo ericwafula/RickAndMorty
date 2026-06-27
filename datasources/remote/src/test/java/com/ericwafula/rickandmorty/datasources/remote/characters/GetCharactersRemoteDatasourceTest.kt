@@ -4,7 +4,11 @@ import com.ericwafula.rickandmorty.datasources.remote.helpers.RemoteResult
 import com.ericwafula.rickandmorty.datasources.remote.helpers.createHttpClient
 import com.ericwafula.rickandmorty.datasources.remote.helpers.mockHttpClient
 import io.ktor.client.engine.mock.MockEngine
+import io.ktor.client.engine.mock.respond
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.headersOf
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -21,7 +25,7 @@ class GetCharactersRemoteDatasourceTest {
     fun `returns Success with the parsed page of characters`() = runTest {
         val datasource = datasourceReturning(CHARACTERS_JSON)
 
-        val result = datasource(page = null)
+        val result = datasource(page = null, name = null)
 
         assertTrue(result is RemoteResult.Success)
         val page = (result as RemoteResult.Success).data
@@ -32,9 +36,32 @@ class GetCharactersRemoteDatasourceTest {
     }
 
     @Test
+    fun `sends page and name as query parameters when searching`() = runTest {
+        var requestedUrl: String? = null
+        val datasource = DefaultGetCharactersRemoteDatasource(
+            httpClient = createHttpClient(
+                MockEngine { request ->
+                    requestedUrl = request.url.toString()
+                    respond(
+                        content = CHARACTERS_JSON,
+                        status = HttpStatusCode.OK,
+                        headers = headersOf(HttpHeaders.ContentType, ContentType.Application.Json.toString()),
+                    )
+                },
+            ),
+            ioDispatcher = UnconfinedTestDispatcher(testScheduler),
+        )
+
+        datasource(page = 2, name = "rick")
+
+        assertTrue(requestedUrl!!.contains("page=2"))
+        assertTrue(requestedUrl!!.contains("name=rick"))
+    }
+
+    @Test
     fun `maps 400 Bad Request to a request-failed error carrying the code`() = runTest {
         val result = datasourceReturning("bad request", HttpStatusCode.BadRequest)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Request failed (400)."), result)
     }
@@ -42,23 +69,27 @@ class GetCharactersRemoteDatasourceTest {
     @Test
     fun `maps 401 Unauthorized to a request-failed error carrying the code`() = runTest {
         val result = datasourceReturning("nope", HttpStatusCode.Unauthorized)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Request failed (401)."), result)
     }
 
     @Test
-    fun `maps 404 Not Found to a request-failed error carrying the code`() = runTest {
-        val result = datasourceReturning("not found", HttpStatusCode.NotFound)
-            .invoke(page = null)
+    fun `maps 404 (no matches) to an empty success page`() = runTest {
+        // The Rick & Morty API returns 404 when a ?name= filter matches nothing;
+        // the datasource turns that into an empty page so the UI shows the empty
+        // state rather than an error.
+        val result = datasourceReturning("""{ "error": "There is nothing here" }""", HttpStatusCode.NotFound)
+            .invoke(page = null, name = "zzzznomatch")
 
-        assertEquals(RemoteResult.Error("Request failed (404)."), result)
+        assertTrue(result is RemoteResult.Success)
+        assertTrue((result as RemoteResult.Success).data.results.isEmpty())
     }
 
     @Test
     fun `maps 500 Internal Server Error to a server error carrying the code`() = runTest {
         val result = datasourceReturning("boom", HttpStatusCode.InternalServerError)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Server error (500)."), result)
     }
@@ -66,7 +97,7 @@ class GetCharactersRemoteDatasourceTest {
     @Test
     fun `maps 503 Service Unavailable to a server error carrying the code`() = runTest {
         val result = datasourceReturning("down", HttpStatusCode.ServiceUnavailable)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Server error (503)."), result)
     }
@@ -74,7 +105,7 @@ class GetCharactersRemoteDatasourceTest {
     @Test
     fun `maps a malformed JSON body to a parse error`() = runTest {
         val result = datasourceReturning("{ this is not valid json", HttpStatusCode.OK)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Failed to parse the response."), result)
     }
@@ -83,7 +114,7 @@ class GetCharactersRemoteDatasourceTest {
     fun `maps a body missing a required field to a parse error`() = runTest {
         // Well-formed JSON, but "results" (a required field) is absent.
         val result = datasourceReturning("""{ "info": { "count": 0, "pages": 0 } }""", HttpStatusCode.OK)
-            .invoke(page = null)
+            .invoke(page = null, name = null)
 
         assertEquals(RemoteResult.Error("Failed to parse the response."), result)
     }
@@ -95,7 +126,7 @@ class GetCharactersRemoteDatasourceTest {
             ioDispatcher = UnconfinedTestDispatcher(testScheduler),
         )
 
-        val result = datasource(page = null)
+        val result = datasource(page = null, name = null)
 
         assertEquals(RemoteResult.Error("No internet connection."), result)
     }

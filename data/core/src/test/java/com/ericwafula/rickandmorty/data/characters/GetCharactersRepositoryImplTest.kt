@@ -2,6 +2,7 @@ package com.ericwafula.rickandmorty.data.characters
 
 import com.ericwafula.rickandmorty.data.helpers.DataResult
 import com.ericwafula.rickandmorty.datasources.remote.characters.CharacterRemoteDatasource
+import com.ericwafula.rickandmorty.datasources.remote.characters.GetCharacterRemoteDatasource
 import com.ericwafula.rickandmorty.datasources.remote.characters.GetCharactersRemoteDatasource
 import com.ericwafula.rickandmorty.datasources.remote.characters.dto.CharacterDto
 import com.ericwafula.rickandmorty.datasources.remote.characters.dto.CharacterLocationDto
@@ -18,7 +19,7 @@ class GetCharactersRepositoryImplTest {
     @Test
     fun `maps a Success response into a DataResult Success of mapped models`() = runTest {
         val datasource = FakeCharacterRemoteDatasource(
-            getCharacters = GetCharactersRemoteDatasource { RemoteResult.Success(responseOf(rickDto)) },
+            getCharacters = GetCharactersRemoteDatasource { _, _ -> RemoteResult.Success(responseOf(rickDto)) },
         )
         val getCharacters = GetCharactersRepositoryImpl(datasource)
 
@@ -40,7 +41,7 @@ class GetCharactersRepositoryImplTest {
     @Test
     fun `maps an empty page into a DataResult Success of no models`() = runTest {
         val datasource = FakeCharacterRemoteDatasource(
-            getCharacters = GetCharactersRemoteDatasource { RemoteResult.Success(responseOf()) },
+            getCharacters = GetCharactersRemoteDatasource { _, _ -> RemoteResult.Success(responseOf()) },
         )
         val getCharacters = GetCharactersRepositoryImpl(datasource)
 
@@ -53,7 +54,7 @@ class GetCharactersRepositoryImplTest {
     @Test
     fun `passes a data-source Error through as a DataResult Error with the same message`() = runTest {
         val datasource = FakeCharacterRemoteDatasource(
-            getCharacters = GetCharactersRemoteDatasource { RemoteResult.Error("No internet connection.") },
+            getCharacters = GetCharactersRemoteDatasource { _, _ -> RemoteResult.Error("No internet connection.") },
         )
         val getCharacters = GetCharactersRepositoryImpl(datasource)
 
@@ -64,7 +65,9 @@ class GetCharactersRepositoryImplTest {
 
     private class FakeCharacterRemoteDatasource(
         override val getCharacters: GetCharactersRemoteDatasource =
-            GetCharactersRemoteDatasource { RemoteResult.Error("not stubbed") },
+            GetCharactersRemoteDatasource { _, _ -> RemoteResult.Error("not stubbed") },
+        override val getCharacter: GetCharacterRemoteDatasource =
+            GetCharacterRemoteDatasource { RemoteResult.Error("not stubbed") },
     ) : CharacterRemoteDatasource
 
     private companion object {

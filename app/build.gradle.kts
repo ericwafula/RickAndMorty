@@ -20,4 +20,7 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.json)
+    // Coil's network backend, declared here so it's unambiguously on the app's
+    // runtime classpath (features only need coil-compose at compile time).
+    implementation(libs.coil.network.okhttp)
 }
