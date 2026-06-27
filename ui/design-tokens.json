@@ -1,0 +1,74 @@
+{
+  "$description": "Rick & Morty UI design tokens — dark sci-fi theme with a single portal-green accent. Source of truth for the Compose theme in com.rickandmorty.ui.theme.",
+  "color": {
+    "background": {
+      "ink900": { "value": "#050607", "comment": "deepest / screen edge" },
+      "ink800": { "value": "#0B0E10", "comment": "app background" },
+      "surface": { "value": "#14181B", "comment": "cards, rows, inputs" },
+      "elevated": { "value": "#1B2024" },
+      "placeholder": { "value": "#1D2327", "comment": "behind AsyncImage" },
+      "shimmerBase": { "value": "#161B1E" },
+      "shimmerHighlight": { "value": "#202829" }
+    },
+    "text": {
+      "primary": { "value": "#F4F7F5" },
+      "secondary": { "value": "#9AA4A0" },
+      "tertiary": { "value": "#646D69" },
+      "muted": { "value": "#5A635F" },
+      "faint": { "value": "#4A534F" }
+    },
+    "portal": {
+      "base": { "value": "#9BF83A", "comment": "primary accent / interactive" },
+      "bright": { "value": "#BCFF66" },
+      "glow": { "value": "#D6FF9E" },
+      "deep": { "value": "#2C6B14", "comment": "accent text on light" },
+      "muted": { "value": "#5A8C2F" },
+      "on": { "value": "#0B0E10", "comment": "foreground on portal fill" }
+    },
+    "status": {
+      "alive": { "value": "#5FD06A" },
+      "dead": { "value": "#FF5D6C" },
+      "unknown": { "value": "#7D8A86" }
+    },
+    "line": {
+      "hairlineWeak": { "value": "#FFFFFF", "alpha": 0.06 },
+      "hairlineSoft": { "value": "#FFFFFF", "alpha": 0.08 },
+      "focusRing": { "value": "#9BF83A", "alpha": 0.12 }
+    }
+  },
+  "font": {
+    "family": {
+      "ui": { "value": "Space Grotesk", "comment": "titles, names, body, buttons" },
+      "mono": { "value": "IBM Plex Mono", "comment": "labels, data, codes" }
+    },
+    "size": {
+      "title": { "value": 27, "unit": "sp" },
+      "subtitle": { "value": 18, "unit": "sp" },
+      "itemName": { "value": 15, "unit": "sp" },
+      "body": { "value": 14, "unit": "sp" },
+      "label": { "value": 12, "unit": "sp" },
+      "dataKey": { "value": 11.5, "unit": "sp" },
+      "caption": { "value": 11, "unit": "sp" },
+      "overline": { "value": 10.5, "unit": "sp" }
+    },
+    "weight": { "regular": 400, "medium": 500, "semibold": 600, "bold": 700 }
+  },
+  "radius": {
+    "xs": { "value": 8, "unit": "dp" },
+    "sm": { "value": 11, "unit": "dp", "comment": "buttons" },
+    "md": { "value": 13, "unit": "dp", "comment": "inputs" },
+    "lg": { "value": 16, "unit": "dp", "comment": "cards / rows" },
+    "xl": { "value": 28, "unit": "dp" },
+    "pill": { "value": "50%" },
+    "avatar": { "value": "circle" }
+  },
+  "spacing": {
+    "xxs": 2, "xs": 4, "sm": 8, "md": 12, "lg": 16, "xl": 20, "xxl": 24,
+    "$unit": "dp"
+  },
+  "dimens": {
+    "screenPaddingH": 18, "listPaddingH": 14, "cardPadding": 12, "listGap": 10,
+    "iconButton": 38, "avatarList": 54, "heroHeight": 268, "statusDot": 7,
+    "minTouchTarget": 48, "$unit": "dp"
+  }
+}
