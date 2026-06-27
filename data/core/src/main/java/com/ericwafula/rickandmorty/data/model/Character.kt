@@ -3,7 +3,8 @@ package com.ericwafula.rickandmorty.data.model
 /**
  * The data layer's own character type — free of any wire/serialization concerns.
  * Mapped from `CharacterDto` via `toData()`; past that boundary nothing knows
- * about the DTO shape.
+ * about the DTO shape. The nested origin/location objects are flattened to their
+ * names and the episode list is reduced to its [episodeCount].
  */
 data class Character(
     val id: Int,
@@ -15,4 +16,5 @@ data class Character(
     val image: String,
     val origin: String,
     val location: String,
+    val episodeCount: Int,
 )

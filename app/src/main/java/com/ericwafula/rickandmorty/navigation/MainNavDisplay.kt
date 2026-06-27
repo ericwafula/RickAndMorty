@@ -7,6 +7,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
+import com.ericwafula.rickandmorty.navigation.routes.characterDetailRoute
 import com.ericwafula.rickandmorty.navigation.routes.charactersRoute
 
 /**
@@ -34,7 +35,8 @@ fun MainNavDisplay(
             rememberViewModelStoreNavEntryDecorator(),
         ),
         entryProvider = entryProvider<NavKey> {
-            charactersRoute()
+            charactersRoute(backStack)
+            characterDetailRoute(backStack)
         },
     )
 }

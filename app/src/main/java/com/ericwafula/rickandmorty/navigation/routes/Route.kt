@@ -14,4 +14,7 @@ sealed interface Route : NavKey {
 
     @Serializable
     data object Characters : Route
+
+    @Serializable
+    data class CharacterDetail(val id: Int) : Route
 }
