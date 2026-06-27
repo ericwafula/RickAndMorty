@@ -10,5 +10,5 @@ import org.koin.dsl.module
  * knowing the internals.
  */
 val remoteDatasourceModule = module {
-    includes(clientModule, dispatcherModule)
+    includes(clientModule, dispatcherModule, characterDatasourceModule)
 }

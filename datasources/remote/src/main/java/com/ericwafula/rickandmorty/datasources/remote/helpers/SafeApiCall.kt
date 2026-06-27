@@ -3,6 +3,7 @@ package com.ericwafula.rickandmorty.datasources.remote.helpers
 import io.ktor.client.plugins.ClientRequestException
 import io.ktor.client.plugins.RedirectResponseException
 import io.ktor.client.plugins.ServerResponseException
+import io.ktor.serialization.ContentConvertException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
@@ -33,6 +34,9 @@ suspend fun <T> safeApiCall(
         RemoteResult.Error("Server error (${e.response.status.value}).")
     } catch (e: RedirectResponseException) {
         RemoteResult.Error("Unexpected redirect (${e.response.status.value}).")
+    } catch (e: ContentConvertException) {
+        // Ktor wraps kotlinx's SerializationException when decoding the body.
+        RemoteResult.Error("Failed to parse the response.")
     } catch (e: SerializationException) {
         RemoteResult.Error("Failed to parse the response.")
     } catch (e: Exception) {
